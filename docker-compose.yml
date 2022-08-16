@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  apache:
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    volumes: 
+      - ./:/var/www/html
+    container_name: php8-apache
+    ports:
+      - 3001:80
+    networks:
+      - compose-bridge
+    depends_on:
+      - database
+      
+  database:
+    image: mysql:8.0
+    container_name: mysql8
+    networks:
+      - compose-bridge
+    environment:
+      - MYSQL_DATABASE=obj
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=123
+      - MYSQL_ROOT_PASSWORD=123
+    ports:
+        - 3306:80
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin8
+    networks:
+      - compose-bridge
+    ports:
+      - 9501:80
+    environment:
+      - PMA_ARBITRARY=1
+
+networks:
+  compose-bridge:
+    driver: bridge
