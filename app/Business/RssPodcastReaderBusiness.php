@@ -1,9 +1,14 @@
 <?php
 
-namespace App;
+namespace App\Business;
 
-class RssPodcastReader 
+use App\Traits\FileManipulatorTrait;
+use App\Traits\StringTraits;
+
+class RssPodcastReaderBusiness
 {
+    use StringTraits, FileManipulatorTrait;
+
     private $podcastList = [];
 
     public function rssLoader(): void
@@ -19,6 +24,7 @@ class RssPodcastReader
         );
         
         $entries = array();
+
         foreach($feeds as $key => $feed) {
             $xml = simplexml_load_file($feed);
            
@@ -30,14 +36,15 @@ class RssPodcastReader
             $entries = array_merge($entries, $xml->xpath("//channel"));
         }
 
-        usort($entries, function ($feed1, $feed2) {
-            return strtotime($feed2->pubDate) - strtotime($feed1->pubDate);
-        });
-
+        $this->createPodcastFiles($entries);
+        $this->createPodcastListCatalog();
+    }
+    
+    private function createPodcastFiles(array $entries): void
+    {
         foreach($entries as $entry) {
-            $podcastName = strtolower($entry->title);
+            $podcastName = self::removeAllSpecialCharacaters(strtolower($entry->title));
             $podcastPathName = str_replace(' ', '', 'podcasts/'.$podcastName);
-
             $podcastDirectoryExists = is_dir($podcastPathName);
             
             if (!$podcastDirectoryExists) {
@@ -46,10 +53,8 @@ class RssPodcastReader
 
             $entry['podcastName'] = 'podcast-name-'.(string) $podcastName;
             $path = str_replace(' ', '', $podcastPathName.'/'.$podcastName.'.json');
-            $fp = fopen($path, 'w');
-            
-            fwrite($fp, json_encode($entry));
-            fclose($fp);
+
+            self::createFile($path, json_encode($entry));
             
             array_push($this->podcastList, [
                 'podcastName' => 'podcast-name-'.(string) $podcastName,
@@ -60,12 +65,11 @@ class RssPodcastReader
                 ]
             );
         }
+    }
 
-        $fp = fopen('podcasts/podcastList.json', 'w');
-        fwrite($fp, json_encode($this->podcastList));
-        fclose($fp);
-
-        $this->getPodcastFile();
+    private function createPodcastListCatalog(): void
+    {
+        self::createFile('podcasts/podcastList.json', json_encode($this->podcastList));
     }
 
     public function getPodcastFile()

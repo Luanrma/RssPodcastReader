@@ -1,6 +1,8 @@
 <?php
+
 require './vendor/autoload.php';
 
 use App\Business\RssPodcastReaderBusiness;
 
-(new RssPodcastReaderBusiness())->rssLoader();
+echo "<pre>";
+echo (new RssPodcastReaderBusiness())->getPodcastFile();
